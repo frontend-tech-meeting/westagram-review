@@ -1,9 +1,7 @@
-/** @format */
-
 import React from "react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { config } from "./config";
+import { config, STATUS } from "./config";
 import "./Login.scss";
 
 function Login() {
@@ -12,66 +10,91 @@ function Login() {
     userId: "",
     userPw: "",
   });
-  const [data, setData] = useState("");
-
-  useEffect(() => {
-    fetch("https://westagram-signup.herokuapp.com/signup", {})
-      .then((res) => res.json())
-      .then((res) => console.log(res));
-  }, []);
-
   const { userId, userPw } = userInfo;
-  const submitUserId = (e) => {
+
+  const updateUserId = (e) => {
     setUserInfo({
       ...userInfo,
       userId: e.target.value,
     });
   };
 
-  const submitUserPassword = (e) => {
+  const updateUserPassword = (e) => {
     setUserInfo({
       ...userInfo,
       userPw: e.target.value,
     });
   };
 
-  // const goToMain = () => {
-  //   userId.includes("@") && userPw.length >= 5
-  //     ? navigate("/main")
+  const submitSignupInfo = (e) => {
+    fetch(config.api + "/signup", {
+      method: "POST",
+      body: JSON.stringify({ id: userId, password: userPw }),
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.message === STATUS.SIGNUP) {
+          localStorage.setItem("token", res.token);
+        }
+      });
+  };
 
-  // };
+  const submitLoginInfo = async (e) => {
+    const res = await fetch(config.api + "/login", {
+      method: "POST",
+      headers: {
+        Authorization: localStorage.getItem("token"),
+      },
+      body: JSON.stringify({ id: userId, password: userPw }),
+    }).then((res) => res.json());
+
+    if (res.message === STATUS.LOGIN) {
+      alert("Login 성공");
+      goToMain();
+    }
+  };
+
+  const goToMain = () => {
+    navigate("/main");
+  };
+
+  const isUserInfoValid = userId.length > 6 && userPw.length > 6;
 
   return (
-    <div className='login'>
-      <div className='loginBoxContainer'>
-        <h1 className='instagramTitle'>instagram</h1>
+    <div className="login">
+      <div className="loginBoxContainer">
+        <h1 className="instagramTitle">instagram</h1>
 
-        <div className='inputContainer'>
+        <div className="inputContainer">
           <input
-            type='text'
-            className='inputIdNameOrPhone inputStyled'
-            placeholder='전화번호,사용자 이름 또는 이메일'
-            onChange={submitUserId}
+            type="text"
+            className="loginInput"
+            placeholder="전화번호,사용자 이름 또는 이메일"
+            onChange={updateUserId}
           />
           <input
-            className='inputPassword inputStyled'
-            type='password'
-            placeholder='비밀번호'
-            onChange={submitUserPassword}
+            className="inputPassword loginInput"
+            type="password"
+            placeholder="비밀번호"
+            onChange={updateUserPassword}
           />
         </div>
 
         <button
-          // onClick={goToMain}
-          className={
-            userId.includes("@") && userPw.length >= 5
-              ? "validLoginBtn"
-              : "unValidLoginBtn"
-          }>
+          name="signup"
+          onClick={submitSignupInfo}
+          className={`loginBtn ${isUserInfoValid ? "valid" : "invalid"}`}
+        >
+          회원가입
+        </button>
+        <button
+          name="login"
+          onClick={submitLoginInfo}
+          className={`loginBtn ${isUserInfoValid ? "valid" : "invalid"}`}
+        >
           로그인
         </button>
-
-        <p className='passwordSearch'>비밀번호를 잊으셨나요?</p>
+        <p className="passwordSearch">비밀번호를 잊으셨나요?</p>
       </div>
     </div>
   );
